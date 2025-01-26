@@ -7,7 +7,6 @@ const permit = new Permit({
   pdp: process.env.PERMIT_PDP_URL,
 });
 
-// Configuration for tenants and users. This can be modified according to your own tenant and users
 const CONFIG = {
   tenants: [
     {
@@ -75,30 +74,6 @@ const CONFIG = {
   ],
 };
 
-async function setupResource() {
-  try {
-    console.log("Creating Document resource...");
-    await permit.api.createResource({
-      key: "document",
-      name: "Document",
-      description: "Document resource for multi-tenant management",
-      actions: [
-        { key: "create", name: "Create Document" },
-        { key: "read", name: "Read Document" },
-        { key: "update", name: "Update Document" },
-        { key: "delete", name: "Delete Document" },
-      ],
-    });
-    console.log("✓ Document resource created");
-  } catch (error) {
-    if (error.message.includes("already exists")) {
-      console.log("ℹ Document resource already exists");
-    } else {
-      throw error;
-    }
-  }
-}
-
 async function setupTenants() {
   for (const tenant of CONFIG.tenants) {
     try {
@@ -120,7 +95,6 @@ async function setupUsers() {
     try {
       console.log(`Creating user: ${user.email}...`);
 
-      // Sync user to Permit.io
       await permit.api.syncUser({
         key: user.key,
         email: user.email,
@@ -129,7 +103,6 @@ async function setupUsers() {
         attributes: { tenantId: user.tenant },
       });
 
-      // Assign role to user
       await permit.api.assignRole({
         user: user.key,
         role: user.role,
@@ -149,25 +122,15 @@ async function setupUsers() {
 
 async function setupPermit() {
   try {
-    console.log("Starting Permit.io setup...\n");
-
-    // Setup in sequence
-    await setupResource();
-    console.log("");
-
+    console.log("Starting Permit.io data sync...\n");
     await setupTenants();
     console.log("");
-
     await setupUsers();
-    console.log("\n✓ Permit.io setup completed successfully");
+    console.log("\n✓ Data sync completed successfully");
   } catch (error) {
     console.error("\n❌ Setup failed:", error.message);
-    if (error.response?.data) {
-      console.error("Error details:", error.response.data);
-    }
     process.exit(1);
   }
 }
 
-// Run setup
 setupPermit();
